@@ -67,6 +67,23 @@ pub fn load(
         None => None,
     };
 
+    if load_args.headless {
+        // Run in headless mode
+        println!("Running program in headless mode");
+        let mut runtime = rt;
+        
+        // Run until completion or error
+        while !runtime.finished() {
+            if let Err(e) = runtime.step() {
+                println!("Runtime error occurred:");
+                return Err(e.into());
+            }
+        }
+        
+        println!("Program completed successfully");
+        return Ok(());
+    }
+
     // tui
     // setup terminal
     println!("Ready to run, launching tui");

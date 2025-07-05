@@ -93,6 +93,14 @@ pub struct LoadArgs {
         display_order = 31
     )]
     pub custom_instruction_history_file: Option<String>,
+
+    #[arg(
+        long,
+        help = "Run in headless mode (no UI)",
+        long_help = "Run the program without UI and exit. Program output and errors will be printed to console.",
+        display_order = 34
+    )]
+    pub headless: bool,
 }
 
 #[derive(Args, Clone, Debug)]
