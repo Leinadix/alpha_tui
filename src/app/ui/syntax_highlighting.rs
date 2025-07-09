@@ -78,7 +78,7 @@ impl SyntaxHighlighter {
     }
 
     /// Span to be used when the value is constant.
-    fn constant_span(&self, value: &i32) -> Span<'static> {
+    fn constant_span(&self, value: &i64) -> Span<'static> {
         Span::from(format!("{value}")).style(self.theme.constant())
     }
 
@@ -219,6 +219,7 @@ impl ToSpans for Instruction {
             Self::Push => vec![sh.build_in_span("push")],
             Self::Return => vec![sh.build_in_span("return")],
             Self::StackOp(op) => vec![sh.build_in_span("stack"), sh.op_span(op)],
+            Self::Syscall => vec![sh.build_in_span("syscall")],
         }
     }
 }

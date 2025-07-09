@@ -241,7 +241,7 @@ impl App {
                             KeyCode::Char('s') => match self.state {
                                 State::Default => {
                                     self.instruction_list_states
-                                        .set_start(self.runtime.next_instruction_index() as i32);
+                                        .set_start(self.runtime.next_instruction_index() as i64);
                                     self.state = State::Running(
                                         self.instruction_list_states.breakpoints_set(),
                                     );
@@ -341,7 +341,7 @@ impl App {
         // update instruction list states before running instruction to set the highlighted line correctly
         // in case jump to line or a call instruction was executed
         self.instruction_list_states
-            .set(self.runtime.next_instruction_index() as i32);
+            .set(self.runtime.next_instruction_index() as i64);
 
         let res = self.runtime.step();
         if let Err(e) = res {
@@ -349,7 +349,7 @@ impl App {
             return Err(());
         }
         self.instruction_list_states
-            .set(self.runtime.next_instruction_index() as i32);
+            .set(self.runtime.next_instruction_index() as i64);
         if self.runtime.finished() {
             match self.state {
                 State::RuntimeError(_, _) => (),
@@ -370,7 +370,7 @@ impl App {
         match self.state {
             State::Running(_) => (),
             _ => {
-                //self.instruction_list_states.set(self.runtime.next_instruction_index() as i32);
+                //self.instruction_list_states.set(self.runtime.next_instruction_index() as i64);
                 self.instruction_list_states
                     .force_set(self.runtime.initial_instruction_index());
             }

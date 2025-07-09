@@ -838,7 +838,7 @@ fn test_parse_stack_op() {
     );
 }
 
-fn run_stack_op(op: Operation, result: i32) {
+fn run_stack_op(op: Operation, result: i64) {
     let mut runtime_memory = setup_runtime_memory();
     let mut control_flow = ControlFlow::new();
     let runtime_settings = setup_runtime_settings();

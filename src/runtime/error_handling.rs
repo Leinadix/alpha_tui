@@ -114,7 +114,7 @@ pub enum RuntimeErrorType {
         code("runtime_error::index_memory_cell_negative_index"),
         help("Make sure that the value with which you try to access the index memory cell is positive")
     )]
-    IndexMemoryCellNegativeIndex(i32),
+    IndexMemoryCellNegativeIndex(i64),
 
     #[error("Attempt to push value of a0 onto stack while a0 is not initialized")]
     #[diagnostic(
@@ -170,6 +170,13 @@ pub enum RuntimeErrorType {
         help("You have run over {0} instructions, this tool is not build for that.\nIf you know exactly what you are doing and would like to circumvent this limit use the '--disable-instruction-limit' option\nWarning: This can cause the progrmm to freeze!")
     )]
     DesignLimitReached(usize),
+
+    #[error("Unsupport architecture, syscalls are not supported on this architecture")]
+    #[diagnostic(
+        code("runtime_error::unsupported_architecture"),
+        help("You have tried to use the \"syscall\" command, which is currently not supported on your plattform.\nTo see updates on this feature, please visit the GitHub issue tracker at https://github.com/LMH01/alpha_tui/issues/88")
+    )]
+    UnsupportedArchitecture(),
 }
 
 #[derive(Debug, Clone, PartialEq, Error, Diagnostic)]
@@ -184,7 +191,7 @@ pub enum CalcError {
     #[error("Attempt to {0} with overflow")]
     #[diagnostic(
         code("calc_error::attempt_to_overflow"),
-        help("{1} would have resulted in an overflow leading to a wrong value.\nMake sure the integer never leaves the following rmnge: [{},{}]", i32::MIN, i32::MAX)
+        help("{1} would have resulted in an overflow leading to a wrong value.\nMake sure the integer never leaves the following rmnge: [{},{}]", i64::MIN, i64::MAX)
     )]
     AttemptToOverflow(String, String),
 }
@@ -459,7 +466,7 @@ mod tests {
     #[test]
     fn test_re_ce_attempt_to_overflow_add() {
         let mut rm = RuntimeMemory::new(2, vec![], None, true);
-        rm.accumulators.get_mut(&0).unwrap().data = Some(i32::MAX);
+        rm.accumulators.get_mut(&0).unwrap().data = Some(i64::MAX);
         rm.accumulators.get_mut(&1).unwrap().data = Some(1);
         let mut cf = ControlFlow::new();
         let rs = RuntimeSettings::default();
@@ -480,7 +487,7 @@ mod tests {
     #[test]
     fn test_re_ce_attempt_to_overflow_sub() {
         let mut rm = RuntimeMemory::new(2, vec![], None, true);
-        rm.accumulators.get_mut(&0).unwrap().data = Some(i32::MIN);
+        rm.accumulators.get_mut(&0).unwrap().data = Some(i64::MIN);
         rm.accumulators.get_mut(&1).unwrap().data = Some(1);
         let mut cf = ControlFlow::new();
         let rs = RuntimeSettings::default();
@@ -504,7 +511,7 @@ mod tests {
     #[test]
     fn test_re_ce_attempt_to_overflow_div() {
         let mut rm = RuntimeMemory::new(2, vec![], None, true);
-        rm.accumulators.get_mut(&0).unwrap().data = Some(i32::MIN);
+        rm.accumulators.get_mut(&0).unwrap().data = Some(i64::MIN);
         rm.accumulators.get_mut(&1).unwrap().data = Some(-1);
         let mut cf = ControlFlow::new();
         let rs = RuntimeSettings::default();
@@ -525,7 +532,7 @@ mod tests {
     #[test]
     fn test_re_ce_attempt_to_overflow_mul() {
         let mut rm = RuntimeMemory::new(2, vec![], None, true);
-        rm.accumulators.get_mut(&0).unwrap().data = Some(i32::MAX);
+        rm.accumulators.get_mut(&0).unwrap().data = Some(i64::MAX);
         rm.accumulators.get_mut(&1).unwrap().data = Some(2);
         let mut cf = ControlFlow::new();
         let rs = RuntimeSettings::default();
@@ -549,7 +556,7 @@ mod tests {
     #[test]
     fn test_re_ce_attempt_to_overflow_mod() {
         let mut rm = RuntimeMemory::new(2, vec![], None, true);
-        rm.accumulators.get_mut(&0).unwrap().data = Some(i32::MIN);
+        rm.accumulators.get_mut(&0).unwrap().data = Some(i64::MIN);
         rm.accumulators.get_mut(&1).unwrap().data = Some(-1);
         let mut cf = ControlFlow::new();
         let rs = RuntimeSettings::default();

@@ -16,7 +16,7 @@ pub struct Accumulator {
     /// Used to identify accumulator
     pub id: usize,
     /// The data stored in the Accumulator
-    pub data: Option<i32>,
+    pub data: Option<i64>,
 }
 
 impl Accumulator {
@@ -41,7 +41,7 @@ impl Display for Accumulator {
 #[derive(Debug, Clone, PartialEq)]
 pub struct MemoryCell {
     pub label: String,
-    pub data: Option<i32>,
+    pub data: Option<i64>,
 }
 
 impl MemoryCell {
@@ -66,7 +66,7 @@ impl Display for MemoryCell {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IndexMemoryCell {
     pub index: usize,
-    pub data: i32,
+    pub data: i64,
 }
 
 /// Different ways of paring two values
@@ -83,7 +83,7 @@ pub enum Comparison {
 
 impl Comparison {
     /// Compares two values with the selected method of comparison.
-    pub fn cmp(&self, x: i32, y: i32) -> bool {
+    pub fn cmp(&self, x: i64, y: i64) -> bool {
         match self {
             Self::Lt => x < y,
             Self::Le => x <= y,
@@ -178,7 +178,7 @@ pub enum Operation {
 }
 
 impl Operation {
-    pub fn calc(self, x: i32, y: i32) -> Result<i32, RuntimeErrorType> {
+    pub fn calc(self, x: i64, y: i64) -> Result<i64, RuntimeErrorType> {
         match self {
             Self::Add => match x.checked_add(y) {
                 Some(v) => Ok(v),

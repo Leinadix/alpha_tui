@@ -110,6 +110,16 @@ These are the different return values of the check command:
 | 2 | runtime error |
 | 10 | io error |
 
+
+### Syscalls
+
+The `syscall` command can be used to perform a syscall on the host machine. You do not need to handle memory differently than on your host, everything should be handled automatically.
+If you encounter an error, please open an issue on the issue tracker and reference issue [#88](https://github.com/LMH01/alpha_tui/issues/88).
+Please keep in mind that when working with syscalls, alpha_tui will always allocate 8 bytes of Host-RAM per memory cell.
+The calling conventions should be the same as your host systems calling conventions.
+
+This command will only work on supported platforms/architectures. You can use the `/generate_syscalls.py` script to generate the syscalls for your platform if you are on linux.
+
 ### Error handling
 
 [Miette](https://github.com/zkat/miette) is used for error handling, this provides helpful error messages when a program can not be compiled due to an unknown instruction.

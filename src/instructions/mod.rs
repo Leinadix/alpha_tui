@@ -1,5 +1,7 @@
+use crate::instructions::syscalls::pointer_flags;
+use std::collections::HashMap;
 use std::fmt::Display;
-
+use std::{io, ptr};
 use miette::Result;
 
 use crate::{
@@ -9,6 +11,9 @@ use crate::{
 };
 
 use self::parsing::{parse_alpha, parse_gamma, parse_index_memory_cell, parse_memory_cell};
+
+#[cfg(target_os = "linux")]
+use libc::{syscall};
 
 pub mod error_handling;
 pub mod instruction_config;
@@ -38,6 +43,7 @@ pub enum Instruction {
     StackOp(Operation),
     Call(String),
     Return,
+    Syscall,
 
     /// Dummy instruction that does nothing, is inserted in empty lines
     Noop,
@@ -74,6 +80,7 @@ impl Instruction {
             Self::Call(label) => run_call(control_flow, label)?,
             Self::Return => run_return(control_flow)?,
             Self::Noop => (),
+            Self::Syscall => run_syscall(runtime_memory)?,
         }
         Ok(())
     }
@@ -108,6 +115,7 @@ impl Display for Instruction {
             Self::Push => write!(f, "push"),
             Self::Return => write!(f, "return"),
             Self::StackOp(op) => write!(f, "stack{op}"),
+            Self::Syscall => write!(f, "syscall"),
         }
     }
 }
@@ -136,6 +144,7 @@ impl Identifier for Instruction {
             Self::Push => "push".to_string(),
             Self::Return => "return".to_string(),
             Self::StackOp(op) => format!("stack{}", op.identifier()),
+            Self::Syscall => "syscall".to_string(),
         }
     }
 }
@@ -300,6 +309,162 @@ fn run_stack_op(runtime_memory: &mut RuntimeMemory, op: Operation) -> Result<(),
     }
 }
 
+use std::mem::size_of;
+
+const CELL_SIZE: usize = size_of::<i64>();
+
+fn flatten_cells(cells: &HashMap<usize, Option<i64>>) -> Vec<u8> {
+    let max_index = cells.keys().cloned().max().unwrap_or(0);
+    let total_slots = max_index + 1;
+
+    let mut buf = vec![0u8; total_slots * CELL_SIZE];
+
+    for (&idx, &maybe_val) in cells.iter() {
+        if let Some(val) = maybe_val {
+            let start = idx * CELL_SIZE;
+            let end   = start + CELL_SIZE;
+            buf[start..end].copy_from_slice(&val.to_le_bytes());
+        }
+    }
+
+    buf
+}
+
+
+fn unflatten_cells(buf: &[u8], cells: &mut HashMap<usize, Option<i64>>) {
+
+
+    let n = buf.len() / CELL_SIZE;
+    for i in 0..n {
+        let start = i * CELL_SIZE;
+        let mut arr = [0u8; CELL_SIZE];
+        arr.copy_from_slice(&buf[start .. start + CELL_SIZE]);
+        let all_zero = arr.iter().all(|&b| b == 0);
+        let val = i64::from_le_bytes(arr);
+        cells.remove(&i);
+        cells.insert(i, if all_zero { Some(0) } else { Some(val) });
+    }
+}
+
+mod syscalls;
+
+
+fn print_memory(runtime_memory: &mut RuntimeMemory){
+    println!("Memory Cells:");
+
+    for (key, cell) in &runtime_memory.memory_cells {
+        println!("{}: {:?}", key, cell.data);
+    }
+
+    println!("\nIndex Memory Cells:");
+    for (key, cell) in &runtime_memory.index_memory_cells {
+        println!("p({}): {:?}", key, cell);
+    }
+
+    println!("\nAccumulators:");
+    for (key, acc) in &runtime_memory.accumulators {
+        println!("a{}: {:?}", key, acc.data);
+    }
+
+    if let Some(gamma) = runtime_memory.gamma {
+        println!("\nGamma: {:?}", gamma);
+    }
+}
+
+fn run_syscall(
+    runtime_memory: &mut RuntimeMemory
+) -> Result<(), RuntimeErrorType> {
+
+    // Check if plattform is supported
+    if !cfg!(target_os = "linux") {
+        return Err(RuntimeErrorType::UnsupportedArchitecture());
+    }
+
+    // Get sysno from a0
+    let syscall = runtime_memory.accumulators.get(&0).unwrap().data.unwrap_or(0);
+
+    //print_memory(runtime_memory);
+
+    // Convert runtime memory cells to host memory
+    let mut buf = flatten_cells(&runtime_memory.index_memory_cells);
+
+
+    let host_memory_offset = buf.as_mut_ptr();
+
+    // Find which arguments are passed AS a pointer
+    let mut flags_vec: Vec<bool> = pointer_flags(syscall as u32)
+        .unwrap_or(&[])
+        .iter()
+        .copied()
+        .collect();
+
+    flags_vec.resize(7, false);
+
+
+    // println!("Host memory offset: {}", host_memory_offset as i64);
+    // println!("Syscall: {:?}", syscall);
+
+    // offset accumulators where needed
+
+    runtime_memory
+        .accumulators
+        .iter_mut()
+        .enumerate()
+        .for_each(|(idx, acc)| {
+            if acc.0 > &0 && flags_vec[acc.0 - 1] {
+                let current_acc_data = acc.1.data.unwrap();
+                acc.1.data = Some(current_acc_data + host_memory_offset as i64);
+                /*
+                println!(
+                    "Accumulator {} offset to: {}",
+                    acc.0,
+                    acc.1.data.unwrap()
+                );
+                 */
+            }
+        });
+
+    //print_memory(runtime_memory);
+
+    /* Debug
+    // unsafe: look at the memory directly
+    println!("Host memory: {:?}", unsafe {
+        std::slice::from_raw_parts(host_memory_offset as *const i64, buf.len() / CELL_SIZE)
+    });
+    */
+
+    // run syscall
+    #[cfg(target_os = "linux")]
+    unsafe {
+        let ret = libc::syscall(
+            syscall,
+            runtime_memory.accumulators.get(&1).unwrap_or(&Accumulator { id: 1, data: None }).data.unwrap_or(0),
+            runtime_memory.accumulators.get(&2).unwrap_or(&Accumulator { id: 2, data: None }).data.unwrap_or(0),
+            runtime_memory.accumulators.get(&3).unwrap_or(&Accumulator { id: 3, data: None }).data.unwrap_or(0),
+            runtime_memory.accumulators.get(&4).unwrap_or(&Accumulator { id: 4, data: None }).data.unwrap_or(0),
+            runtime_memory.accumulators.get(&5).unwrap_or(&Accumulator { id: 5, data: None }).data.unwrap_or(0),
+            runtime_memory.accumulators.get(&6).unwrap_or(&Accumulator { id: 6, data: None }).data.unwrap_or(0),
+        );
+        runtime_memory.accumulators.get_mut(&0).unwrap().data = Some(ret);
+
+        if ret < 0 {
+            let e = io::Error::last_os_error();
+            eprintln!("syscall failed: {}", e);
+        }
+    };
+
+    // print_memory(runtime_memory);
+
+    // Convert host memory back to runtime memory cells
+    unflatten_cells(&buf, &mut runtime_memory.index_memory_cells);
+
+    // print_memory(runtime_memory);
+
+    Ok(())
+}
+
+
+
 fn run_call(control_flow: &mut ControlFlow, label: &str) -> Result<(), RuntimeErrorType> {
     control_flow.call_function(label)
 }
@@ -332,13 +497,13 @@ fn assert_accumulator_exists(
 
 /// Tests if the accumulator with **index** exists and contains a value.
 ///
-/// Ok(i32) contains the accumulator value.
+/// Ok(i64) contains the accumulator value.
 ///
 /// Err(String) contains error message.
 fn assert_accumulator_contains_value(
     runtime_memory: &RuntimeMemory,
     index: usize,
-) -> Result<i32, RuntimeErrorType> {
+) -> Result<i64, RuntimeErrorType> {
     if let Some(value) = runtime_memory.accumulators.get(&index) {
         if value.data.is_some() {
             Ok(runtime_memory
@@ -372,7 +537,7 @@ fn assert_gamma_exists(
 }
 
 /// Tests if gamma contains a value.
-fn assert_gamma_contains_value(runtime_memory: &RuntimeMemory) -> Result<i32, RuntimeErrorType> {
+fn assert_gamma_contains_value(runtime_memory: &RuntimeMemory) -> Result<i64, RuntimeErrorType> {
     if let Some(value) = runtime_memory.gamma {
         if let Some(value) = value {
             return Ok(value);
@@ -404,13 +569,13 @@ fn assert_memory_cell_exists(
 
 /// Tests if the memory cell with **label** exists and contains a value.
 ///
-/// Ok(i32) contains the memory cell value.
+/// Ok(i64) contains the memory cell value.
 ///
 /// Err(String) contains error message.
 fn assert_memory_cell_contains_value(
     runtime_memory: &RuntimeMemory,
     label: &str,
-) -> Result<i32, RuntimeErrorType> {
+) -> Result<i64, RuntimeErrorType> {
     if let Some(value) = runtime_memory.memory_cells.get(label) {
         if value.data.is_some() {
             Ok(runtime_memory
@@ -430,7 +595,7 @@ fn assert_memory_cell_contains_value(
 fn assert_index_memory_cell_contains_value(
     runtime_memory: &RuntimeMemory,
     index: usize,
-) -> Result<i32, RuntimeErrorType> {
+) -> Result<i64, RuntimeErrorType> {
     if let Some(value) = runtime_memory.index_memory_cells.get(&index) {
         if let Some(value) = value {
             Ok(*value)
@@ -448,7 +613,7 @@ fn assign_index_memory_cell(
     runtime_memory: &mut RuntimeMemory,
     runtime_settings: &RuntimeSettings,
     idx: usize,
-    value: i32,
+    value: i64,
 ) -> Result<(), RuntimeErrorType> {
     if runtime_memory.index_memory_cells.contains_key(&idx)
         || runtime_settings.autodetect_index_memory_cells
@@ -599,12 +764,12 @@ pub enum Value {
     Accumulator(usize),
     Gamma,
     MemoryCell(String),
-    Constant(i32),
+    Constant(i64),
     IndexMemoryCell(IndexMemoryCellIndexType),
 }
 
 impl Value {
-    fn value(&self, runtime_args: &RuntimeMemory) -> Result<i32, RuntimeErrorType> {
+    fn value(&self, runtime_args: &RuntimeMemory) -> Result<i64, RuntimeErrorType> {
         match self {
             Self::Accumulator(a) => {
                 assert_accumulator_contains_value(runtime_args, *a)?;
@@ -621,7 +786,7 @@ impl Value {
                     let idx = index_from_accumulator(runtime_args, *idx)?;
                     Ok(assert_index_memory_cell_contains_value(
                         runtime_args,
-                        idx as usize,
+                        idx,
                     )?)
                 }
                 IndexMemoryCellIndexType::Direct(idx) => {
@@ -662,7 +827,7 @@ impl TryFrom<(&String, (usize, usize))> for Value {
         if let Ok(v) = parse_memory_cell(value.0, value.1) {
             return Ok(Self::MemoryCell(v));
         }
-        if let Ok(v) = value.0.parse::<i32>() {
+        if let Ok(v) = value.0.parse::<i64>() {
             return Ok(Self::Constant(v));
         }
         if parse_gamma(value.0, value.1).is_ok() {

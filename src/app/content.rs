@@ -16,8 +16,8 @@ pub struct InstructionListStates {
     instruction_list_state: ListState,
     breakpoint_list_state: ListState,
     instructions: Vec<(usize, Line<'static>, bool)>, // index, line content, is a breakpoint present
-    last_index: i32,
-    current_index: i32,
+    last_index: i64,
+    current_index: i64,
 }
 
 #[allow(clippy::cast_sign_loss)]
@@ -73,14 +73,14 @@ impl InstructionListStates {
     }
 
     /// Selects the line in which the program starts
-    pub fn set_start(&mut self, current_instruction_index: i32) {
+    pub fn set_start(&mut self, current_instruction_index: i64) {
         self.set(current_instruction_index);
         self.current_index = current_instruction_index - 1;
     }
 
     /// Used to set the line that should be highlighted
-    pub fn set(&mut self, current_instruction_idx: i32) {
-        self.current_index = current_instruction_idx - 1_i32;
+    pub fn set(&mut self, current_instruction_idx: i64) {
+        self.current_index = current_instruction_idx - 1_i64;
         if current_instruction_idx - self.last_index == 1 {
             self.instruction_list_state
                 .select(Some(current_instruction_idx as usize));
@@ -214,7 +214,7 @@ fn list_prev(list_state: &mut ListState, max_index: usize) {
 /// Used to update and set the lists for accumulators, memory cells, stack and call stack.
 pub struct MemoryListsManager {
     accumulators: HashMap<usize, (String, bool)>,
-    gamma: Option<(Option<i32>, bool)>,
+    gamma: Option<(Option<i64>, bool)>,
     memory_cells: HashMap<String, (String, bool)>,
     index_memory_cells: HashMap<usize, (String, bool)>,
     stack: Vec<ListItem<'static>>,

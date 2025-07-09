@@ -219,14 +219,14 @@ pub struct RuntimeMemory {
     ///
     /// First option determines if gamma is active.
     /// Inner option determine if gamma contains a value.
-    pub gamma: Option<Option<i32>>,
+    pub gamma: Option<Option<i64>>,
     /// All registers that are used to store data
     pub memory_cells: HashMap<String, MemoryCell>,
     /// All index registers that are used to store data,
     /// key is the index, value is the value of that register
-    pub index_memory_cells: HashMap<usize, Option<i32>>,
+    pub index_memory_cells: HashMap<usize, Option<i64>>,
     /// The stack of the runner
-    pub stack: Vec<i32>,
+    pub stack: Vec<i64>,
 }
 
 impl Default for RuntimeMemory {

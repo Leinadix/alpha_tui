@@ -18,26 +18,26 @@ pub struct MemoryConfig {
 
 #[derive(PartialEq, Debug, Deserialize, Serialize, Default, Clone)]
 pub struct AccumulatorConfig {
-    pub values: HashMap<usize, Option<i32>>,
+    pub values: HashMap<usize, Option<i64>>,
     pub autodetection: Option<bool>,
 }
 
 #[derive(PartialEq, Debug, Deserialize, Serialize, Default, Clone)]
 pub struct GammaAccumulatorConfig {
     pub enabled: bool,
-    pub value: Option<i32>,
+    pub value: Option<i64>,
     pub autodetection: Option<bool>,
 }
 
 #[derive(PartialEq, Debug, Deserialize, Serialize, Default, Clone)]
 pub struct MemoryCellConfig {
-    pub values: HashMap<String, Option<i32>>,
+    pub values: HashMap<String, Option<i64>>,
     pub autodetection: Option<bool>,
 }
 
 #[derive(PartialEq, Debug, Deserialize, Serialize, Default, Clone)]
 pub struct IndexMemoryCellConfig {
-    pub values: HashMap<usize, Option<i32>>,
+    pub values: HashMap<usize, Option<i64>>,
     pub autodetection: Option<bool>,
 }
 

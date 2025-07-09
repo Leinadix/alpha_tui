@@ -1,0 +1,62 @@
+  // In regards to syscalls one could use the Linux standard registers like this:
+  //
+  // a0 := %rax
+  // a1 := %rdi
+  // a2 := %rsi
+  // a3 := %rdx
+  // a4 := %r10
+  // a5 := %r8
+  // a6 := %r9
+  //
+  //  so a syscall_write (1, msg, msglen) on linux would look like this, taking the message pointer in a0 and its length in a1:
+
+syscall_write_demo:
+    a2 := a0   // copy argument msg from a0 into register %rsi (a2)
+    a3 := a1   // copy argument size from a1 into register %rdx (a3)
+    a0 := 1    // syscall_write
+    a1 := 1    // stdout
+    syscall    // syscall operation
+    return
+
+prepare_memory_8:
+    // write "Hello World!\n" into memory 0-12
+    p(0) := 72    // H
+    p(1) := 101   // e
+    p(2) := 108   // l
+    p(3) := 108   // l
+    p(4) := 111   // o
+    p(5) := 32    // Space
+    p(6) := 87    // W
+    p(7) := 111   // o
+    p(8) := 114   // r
+    p(9) := 108   // l
+    p(10) := 100   // d
+    p(11) := 33    // !
+    p(12) := 10    // LF
+    return
+
+prepare_memory_64:
+    // write "Hello World!\n" into memory 0-12
+    p(0) := 1214606444    // Hell
+    p(1) := 1864398703   // o Wo
+    p(2) := 1919251313   // rld!
+    p(3) := 167772160   // \n
+    return
+
+main:
+    // Show off the 8 byte encoding
+    call prepare_memory_64
+    a0 := 0 // message base address
+    a1 := 13   // message count
+    a1 := a1 * 8 // convert to bytes (13 characters * 8 bits)
+    call syscall_write_demo
+
+    // Show off the 64 bit encoding
+    call prepare_memory_64
+    a0 := 0 // message base address
+    a1 := 4   // message count
+    a1 := a1 * 8 // convert to bytes (4 words * 8 bytes)
+    call syscall_write_demo
+    goto end   // program ended
+
+end: goto end

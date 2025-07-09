@@ -1,0 +1,42 @@
+syscall_write:
+    a2 := a0   // copy argument msg from a0 into register %rsi (a2)
+    a3 := a1   // copy argument size from a1 into register %rdx (a3)
+    a0 := 1    // syscall_write
+    a1 := 1    // stdout
+    syscall    // syscall operation
+    return
+
+syscall_read:
+    a2 := a0   // copy argument msg_pointer from a0 into register %rsi (a2)
+    a3 := a1   // copy argument size from a1 into register %rdx (a3)
+    a0 := 0    // syscall_read
+    a1 := 0    // stdin
+    syscall    // syscall operation
+    return
+
+initialize_memory_n:
+    // a0 base pointer
+    // a1 size in bytes
+    a2 := a0
+initialize_memory_n_loop:
+    if a1 == 0 then goto initialize_memory_n_end
+    p(a2) := 0 // set memory at address a2 to 0
+    a2 := a2 + 1 // increment address
+    a1 := a1 - 1 // decrement size
+    goto initialize_memory_n_loop
+initialize_memory_n_end:
+    return
+
+main:
+    a0 := 0 // msg_pointer
+    a1 := 8
+    call initialize_memory_n // allocate memory for msg_pointer
+    a0 := 0
+    a1 := 8
+    call syscall_read
+    a0 := 0 // msg_pointer
+    a1 := 64
+    call syscall_write
+    goto end   // program ended
+
+end: goto end

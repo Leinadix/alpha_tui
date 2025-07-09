@@ -82,6 +82,10 @@ impl TryFrom<&Vec<&str>> for Instruction {
             return Ok(Instruction::Return);
         }
 
+        if parts[0] == "syscall" && parts.len() == 1 {
+            return Ok(Instruction::Syscall);
+        }
+
         // Handle stack operations
         if parts[0].starts_with("stack") {
             match parts.len() {
