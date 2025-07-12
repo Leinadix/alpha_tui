@@ -37,15 +37,15 @@ prepare_memory_8:
 
 prepare_memory_64:
     // write "Hello World!\n" into memory 0-12
-    p(0) := 1214606444    // Hell
-    p(1) := 1864398703   // o Wo
-    p(2) := 1919251313   // rld!
-    p(3) := 167772160   // \n
+    p(13) := 1214606444    // Hell
+    p(14) := 1864398703   // o Wo
+    p(15) := 1919251313   // rld!
+    p(16) := 167772160   // \n
     return
 
 main:
     // Show off the 8 byte encoding
-    call prepare_memory_64
+    call prepare_memory_8
     a0 := 0 // message base address
     a1 := 13   // message count
     a1 := a1 * 8 // convert to bytes (13 characters * 8 bits)
@@ -53,7 +53,7 @@ main:
 
     // Show off the 64 bit encoding
     call prepare_memory_64
-    a0 := 0 // message base address
+    a0 := 13 // message base address
     a1 := 4   // message count
     a1 := a1 * 8 // convert to bytes (4 words * 8 bytes)
     call syscall_write_demo

@@ -413,7 +413,7 @@ fn run_syscall(
         .for_each(|(idx, acc)| {
             if acc.0 > &0 && flags_vec[acc.0 - 1] {
                 let current_acc_data = acc.1.data.unwrap();
-                acc.1.data = Some(current_acc_data + host_memory_offset as i64);
+                acc.1.data = Some((current_acc_data * CELL_SIZE as i64) + host_memory_offset as i64);
                 /*
                 println!(
                     "Accumulator {} offset to: {}",
