@@ -1,7 +1,7 @@
 use crate::instructions::syscalls::pointer_flags;
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::{io, ptr};
+use std::io;
 use miette::Result;
 
 use crate::{
@@ -12,8 +12,6 @@ use crate::{
 
 use self::parsing::{parse_alpha, parse_gamma, parse_index_memory_cell, parse_memory_cell};
 
-#[cfg(target_os = "linux")]
-use libc::{syscall};
 
 pub mod error_handling;
 pub mod instruction_config;
