@@ -349,6 +349,7 @@ fn unflatten_cells(buf: &[u8], cells: &mut HashMap<usize, Option<i64>>) {
 mod syscalls;
 
 
+#[allow(dead_code)]
 fn print_memory(runtime_memory: &mut RuntimeMemory){
     println!("Memory Cells:");
 
@@ -410,7 +411,7 @@ fn run_syscall(
         .accumulators
         .iter_mut()
         .enumerate()
-        .for_each(|(idx, acc)| {
+        .for_each(|(_idx, acc)| {
             if acc.0 > &0 && flags_vec[acc.0 - 1] {
                 let current_acc_data = acc.1.data.unwrap();
                 acc.1.data = Some((current_acc_data * CELL_SIZE as i64) + host_memory_offset as i64);
