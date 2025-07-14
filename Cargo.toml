@@ -2,8 +2,20 @@
 name = "alpha_tui"
 version = "1.8.1"
 edition = "2021"
+description = "A runtime environment and debugger for Alpha-Notation used in Systemnahe Informatik lectures"
+documentation = "https://lmh01.github.io/alpha_tui/docs/"
+repository = "https://github.com/lmh01/alpha_tui"
+readme = "README.md"
+license = "MIT OR GPL-3.0"
+keywords = ["tui", "debugger", "alpha-notation", "runtime", "interpreter"]
+categories = ["command-line-utilities", "development-tools::debugging"]
+authors = ["LMH01 <lmh01@users.noreply.github.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 ratatui = { version = "0.26.3", features = [

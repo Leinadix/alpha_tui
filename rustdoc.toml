@@ -1,0 +1,27 @@
+# Rustdoc Configuration for Alpha TUI
+# This file configures Rust's built-in documentation generation tool
+
+# HTML output configuration
+[output.html]
+# Enable search functionality
+enable-index-page = true
+# Generate source code links
+source-sidebar-show = true
+# Theme selection
+default-theme = "ayu"
+# Preferred themes list
+preferred-dark-theme = "ayu"
+
+# Documentation features
+enable-index-page = true
+# Generate documentation for private items
+document-private-items = false
+# Generate documentation for dependencies
+document-dependencies = false
+
+# Markdown configuration
+[markdown]
+# Enable GitHub-flavored markdown
+enable-gfm = true
+# Enable syntax highlighting
+enable-smart-punctuation = true
